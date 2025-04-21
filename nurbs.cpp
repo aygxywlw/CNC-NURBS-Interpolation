@@ -1,12 +1,11 @@
-/*是qumian2.c的改进版，主要改进为提供更为有效的控制刀径间的残留误差等。qumian2.c直接给出刀间距，这里给出残留误差的高度，
-由高度再求刀间距*/
+
 #include "stdio.h"
 #include <math.h>
 #include <iostream>
 #include "engine.h"
 #include <stdlib.h>
 #include <string.h>
-#pragma comment(lib,"libeng.lib")               //
+#pragma comment(lib,"libeng.lib")               
 #pragma comment(lib,"libmx.lib")
 #pragma comment(lib,"libmat.lib")
 using namespace std;
@@ -20,7 +19,7 @@ using namespace std;
 { { 20,120,80 },{ 50,120,100 },{ 80,120,120 },{ 110,120,140 },{ 140,120,160 },{ 170,120,140 },{ 200,120,120 },{ 230,120,100 },{ 260,120,80 } },
 { { 20,140,60 },{ 50,140,80 },{ 80,140,100 },{ 110,140,120 },{ 140,140,140 },{ 170,140,140 },{ 200,140,100 },{ 230,140,80 },{ 260,140,60 } },
 { { 20,160,40 },{ 50,160,60 },{ 80,160,80 },{ 110,160,100 },{ 140,160,120 },{ 170,160,100 },{ 200,160,80 },{ 230,160,60 },{ 260,160,40 } },
-{ { 20,180,20 },{ 50,180,40 },{ 80,180,60 },{ 110,180,80 },{ 140,180,100 },{ 170,180,80 },{ 200,180,60 },{ 230,180,40 },{ 260,180,20 } } }; //控制点*/
+{ { 20,180,20 },{ 50,180,40 },{ 80,180,60 },{ 110,180,80 },{ 140,180,100 },{ 170,180,80 },{ 200,180,60 },{ 230,180,40 },{ 260,180,20 } } }; //control points
 /* double coeff[9][9][3]={{{30,20,20},{30,60,50},{30,100,90},{30,130,120},{30,170,160},{30,200,140},{30,260,100},{30,300,80}},
  {{60,20,50},{60,60,90},{60,100,140},{60,130,170},{60,180,200},{60,210,160},{60,250,120},{60,290,100}},
 {{100,20,80},{100,60,100},{100,100,150},{100,130,180},{100,200,210},{100,240,180},{100,300,150},{100,330,110}},
@@ -29,7 +28,7 @@ using namespace std;
 {{240,20,100},{240,60,140},{245,100,190},{240,130,220},{235,200,270},{240,240,240},{245,300,200},{240,360,160}},
 {{300,20,90},{295,60,130},{300,100,170},{305,130,200},{300,180,240},{300,220,210},{310,260,170},{300,300,140}},
 {{350,20,70},{360,60,110},{350,100,150},{340,130,180},{350,200,220},{350,260,190},{360,300,160},{350,350,120}}
- }; //控制点*/
+ }; //control points
 
 double coeff[9][9][3] = {{{30,20,20},{30,60,50},{30,100,90},{30,130,120},{30,170,160},{30,200,140},{30,260,100},{30,300,80},{30,340,60}},
 {{60,20,50},{60,60,90},{60,100,140},{60,130,170},{60,180,200},{60,210,160},{60,250,120},{60,290,100},{60,330,70}},
@@ -39,8 +38,8 @@ double coeff[9][9][3] = {{{30,20,20},{30,60,50},{30,100,90},{30,130,120},{30,170
 {{240,20,100},{240,60,140},{245,100,190},{240,130,220},{235,200,270},{240,240,240},{245,300,200},{240,360,160},{240,410,110}},
 {{300,20,90},{295,60,130},{300,100,170},{305,130,200},{300,180,240},{300,220,210},{310,260,170},{300,300,140},{300,360,100}},
 {{350,20,70},{360,60,110},{350,100,150},{340,130,180},{350,200,220},{350,260,190},{360,300,160},{350,350,120},{350,400,80}},
-{{400,20,50},{400,60,90},{395,90,110},{400,130,140},{405,200,190},{400,240,150},{400,300,120},{405,350,100},{400,390,70}}}; //控制点*/
-double knotu[13] = { 0,0,0,0,0.17,0.33,0.50,0.67,0.83,1,1,1,1 };  //节点
+{{400,20,50},{400,60,90},{395,90,110},{400,130,140},{405,200,190},{400,240,150},{400,300,120},{405,350,100},{400,390,70}}}; ////control points
+double knotu[13] = { 0,0,0,0,0.17,0.33,0.50,0.67,0.83,1,1,1,1 };  //knot vector
 double knotw[13] = { 0,0,0,0,0.17,0.33,0.50,0.67,0.83,1,1,1,1 };
 double weight[9][9] = { 1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,
@@ -50,7 +49,7 @@ double weight[9][9] = { 1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1 }; //权值
+1,1,1,1,1,1,1,1,1 }; //weigths
 //double va[81] = { 40,25,30,25,20,30,20,25,25,60,65,60,55,60,65,60,65,55,100,95,100,105,100,105,100,95,100,140,135,140,145,140,140,140,145,140,200,205,200,195,200,190,200,205,210,240,240,245,240,235,240,245,240,240,300,295,300,305,300,300,310,300,300,350,360,350,340,350,350,360,350,350,400,400,395,400,405,400,400,405,400 };
 //double vb[81] = { 20,60,100,130,170,200,260,300,340,30,70,110,150,180,210,250,290,330,20,60,100,140,200,240,300,330,360,25,55,90,130,170,220,260,300,350,30,60,110,160,200,240,300,350,400,20,50,100,140,200,240,300,360,410,25,60,110,140,180,220,260,300,360,30,70,120,160,200,260,300,350,400,20,50,90,150,200,240,300,350,390 };
 //double vc[81] = { 20,50,90,120,160,140,100,80,60,50,90,140,170,200,160,120,100,70,80,100,150,180,210,180,150,110,80,100,100,160,200,220,180,150,120,90,120,160,200,260,290,260,210,160,100,100,140,190,220,270,240,200,160,110,90,130,170,200,240,210,170,140,100,70,110,150,180,220,190,160,120,80,50,90,110,140,190,150,120,100,70 };
@@ -58,87 +57,78 @@ double weight[9][9] = { 1,1,1,1,1,1,1,1,1,
 //double meshb[9][9] = { { 20,60,100,130,170,200,260,300,340 },{ 30,70,110,150,180,210,250,290,330 },{ 20,60,100,140,200,240,300,330,360 },{ 25,55,90,130,170,220,260,300,350 },{ 30,60,110,160,200,240,300,350,400 },{ 20,50,100,140,200,240,300,360,410 },{ 25,60,110,140,180,220,260,300,360 },{ 30,70,120,160,200,260,300,350,400 },{ 20,50,90,150,200,240,300,350,390 } };
 //double meshc[9][9] = { { 20,50,90,120,160,140,100,80,60 },{ 50,90,140,170,200,160,120,100,70 },{ 80,100,150,180,210,180,150,110,80 },{ 100,100,160,200,220,180,150,120,90 },{ 120,160,200,260,290,260,210,160,100 },{ 100,140,190,220,270,240,200,160,110 },{ 90,130,170,200,240,210,170,140,100 },{ 70,110,150,180,220,190,160,120,80 },{ 50,90,110,140,190,150,120,100,70 } };
 
-double x, y, z, ux, uy, uz;  //x,y,z是插补的坐标值，即没有刀补时的值
-double ucpnx, ucpny, ucpnz, uweight;//udbor函数求出的控制点和权因子   
-double wcpnx, wcpny, wcpnz, wweight; //wdbor函数求出的控制点和权因子
-double px1, py1, pz1; //上一次坐标值
-double d = 5.0;   //刀补半径 
-double radius = 50;  //刀具头圆弧半径
-double xx, yy, zz;//刀补后的坐标值 
-double dpointx, dpointy, dpointz; //deboor函数求出的导数值
-double dux, duy, duz, dwx, dwy, dwz; //两个方向的导数值  
-double ddpx, ddpy, ddpz;//二阶导数值，在deboor函数里面用      
-double ddwx, ddwy, ddwz;//w向二阶导数 
-double setl =3;       //设定步长 
+double x, y, z, ux, uy, uz;
+double ucpnx, ucpny, ucpnz, uweight;   
+double wcpnx, wcpny, wcpnz, wweight; 
+double px1, py1, pz1; 
+double d = 5.0;   
+double radius = 50;  //radius of the cutter
+double xx, yy, zz;
+double dpointx, dpointy, dpointz; 
+double dux, duy, duz, dwx, dwy, dwz;   
+double ddpx, ddpy, ddpz;      
+double ddwx, ddwy, ddwz;
+double setl =3;       //the preset step length
 double acc = 0;
 double msetl = 3;
-double setd; //刀径间距离  
-double seth = 0.02;//刀径间残留高度误差
-double high = 0.02;     //设定弓高误差
-int   wmici = 3;   //w向曲线次数
-int   mici = 3;    //u向次数
-int daoflag = 0;   //刀补方向
-int countnew = 0;     //u向插补次数
+double setd; //tool path distance  
+double seth = 0.02;//preset residual error
+double high = 0.02;     //preset chord error
+int   wmici = 3;   //NURBS order
+int   mici = 3;    
+int daoflag = 0;   
+int countnew = 0;     
 double u, u0;
 double mm = 0;
 double nn = 0;
 double u1 = 0;
 double u2 = 0;
-int countw = 0;   //w向插补次数  
+int countw = 0;    
 double mxx[300];
 double myy[300];
 double mzz[300];
 double w;
 double rl, velocity;
-double deltw, deltw0;//w的增量
-						   /*double w1,w2;
-						   double wm,wn; */
-
-
-
-
-						   //加速用变量
+double deltw, deltw0;
+						
+				
 long tick0 = 1, tick1 = 1, tick2 = 1;
 double deriux0, deriuy0, deriuz0;
 double setl0 = 0, setl1 = 0, setl2 = 0;
 double jiasuleiji;
 
-
-//减速用变量
 long tick00 = 1, tick01 = 1, tick02 = 1;
 double setl00 = 0, setl01 = 0, setl02 = 0;
 double jiansuleiji;
 double lastcurlong = 0;
 
 
-
-
 double w0;
 double ll, vl;
-double ucoeff[9][3];  //u向曲线控制点
-double wcoeff[9][3];  //w向曲线控制点
-double uwei[9];       //u向权因子
-double wwei[9];       //w向权因子
-int flag;             //u向插补时曲线段判断标志
-int degree = 3, l = 6, dense = 50; //曲线次数和插值密度
-double vecx, vecy, vecz; //单位法矢
-double anglea, anglec;  //两个转动角
-void concurve();//创建一条曲线
-void vercon();  //反求控制点
-void direcw();  //插补函数
-void prepare();  //准备函数
-void XYZpoint(); //u 向插补函数
+double ucoeff[9][3]; 
+double wcoeff[9][3]; 
+double uwei[9];      
+double wwei[9];    
+int flag;          
+int degree = 3, l = 6, dense = 50; 
+double vecx, vecy, vecz; 
+double anglea, anglec;  
+void concurve();
+void vercon();  
+void direcw();  
+void prepare();  
+void XYZpoint(); 
 
 Engine *ep;
 mxArray *TX = NULL, *TY = NULL, *TZ = NULL, *TXX = NULL, *TYY = NULL, *TZZ = NULL, *TV = NULL, *TT = NULL;
 double mx[30000], my[30000], mz[30000], mv[30000], mt[30000], ma[30000], mb[30000], mc[30000];
 double meshx[9][9],meshy[9][9],meshz[9][9];
-void deboor(double d, int e, double p[9][3], double wp[9], double knot[13]);/*带求导的deboor函数*/
-void udbor(double d, int e, int n);   /*不带求导的deboor函数，用来求双向的控制点以便求切矢*/
-void udborf(double d, int e, int n);/*在z形走线时求反向的控制点用*/
-void wdbor(double d, int e, int n);/*求w向控制点被wccpnt调用*/
-void uccpnt(double w, int wmici, int k, int hh);   /*求u向控制点函数*/
-void wccpnt(double u, int mici, int k);    /*求w向控制点函数*/
+void deboor(double d, int e, double p[9][3], double wp[9], double knot[13]);
+void udbor(double d, int e, int n);  
+void udborf(double d, int e, int n);
+void wdbor(double d, int e, int n);
+void uccpnt(double w, int wmici, int k, int hh);  
+void wccpnt(double u, int mici, int k);  
 void main()
 {
 
@@ -365,7 +355,7 @@ void direcw()
 	engClose(ep);
 
 }
-/*求每条u向曲线的控制点*/
+/*uccpnt is for getting control points reversely of the u-direction NURBS curve of the NURBS surface*/
 void uccpnt(double w, int wmici, int k, int hh)
 {
 
@@ -381,7 +371,7 @@ void uccpnt(double w, int wmici, int k, int hh)
 
 }
 
-/*求每条w向曲线的控制点*/
+/*wccpnt is for getting control points reversely of the w-direction NURBS curve of the NURBS surface*/
 void wccpnt(double u, int mici, int k)
 {
 
@@ -416,7 +406,8 @@ circle(mx,my,2);
 }
 }
 }
-/*不含求导在内的deboor函数，能正常工作,求u向控制点用,正向*/
+
+/*udbor is used to calculate the NURBS points for u-direction NURBS curve.*/
 void udbor(double d, int e, int n)
 {
 
@@ -455,7 +446,7 @@ void udbor(double d, int e, int n)
 
 }
 
-/*不含求导在内的deboor函数，能正常工作,求u向控制点用,反向*/
+/*udborf is used to calculate the NURBS points reversely.*/
 void udborf(double d, int e, int n)
 {
 
@@ -494,7 +485,7 @@ void udborf(double d, int e, int n)
 
 
 }
-/*不含求导在内的deboor函数，能正常工作,求w向控制点用*/
+/*udbor is used to calculate the NURBS points for w-direction NURBS curve.*/
 void wdbor(double d, int e, int n)
 {
 
@@ -533,7 +524,13 @@ void wdbor(double d, int e, int n)
 
 }
 
-/*含求导和二阶导在内的deboor函数*/
+/*deboor is used to calculate the NURBS point and its first and second derivatives.
+parameter: 
+d: the parameter value
+e: NURBS order
+p:control points
+wp:weights
+knot:knotvcetor*/
 
 void deboor(double d, int e, double p[9][3], double wp[9], double knot[13])
 {
@@ -615,7 +612,7 @@ void deboor(double d, int e, double p[9][3], double wp[9], double knot[13])
 		}
 	}
 
-	/*有点问题需要修改,已经改过*/
+	
 	for (k = 1; k<degree - 1; k++)
 	{
 		for (j = e; j >= e - degree + k + 2; j--)
@@ -647,11 +644,11 @@ void deboor(double d, int e, double p[9][3], double wp[9], double knot[13])
 
 void XYZpoint()
 {
-	/*计算u,用微分近似计算*/
-	double qulv;/*曲率*/
-	double qulvr;/*曲率半径*/
-	double qulvx, qulvy, qulvz;/*曲率向量*/
-	double qux, quy, quz;/*曲率方向*/
+	
+	double qulv;
+	double qulvr;
+	double qulvx, qulvy, qulvz;
+	double qux, quy, quz;
 	double test;
 	double cosa, sina;
 	double midx, midy, midz;
@@ -660,13 +657,12 @@ void XYZpoint()
 	double h, ml,rh;
 	double ddux, dduy, dduz;
 	double actualh;
-	double wx, wy, wz;//w向坐标值
-	double wwx, wwy, wwz;//w向坐标值,和上面一共用来求行间距
-	double asidestep; //实际行间距
+	double wx, wy, wz;
+	double wwx, wwy, wwz;
+	double asidestep; 
 
 
-
-	//加速控制部分
+//for velocity and acceleration schematic
 	//if(w==0)
 
 
@@ -785,7 +781,7 @@ if (lastcurlong > (408.402881 - 89.9))
 
 
 
-//减速控制部分
+//for deceleration
 /*if (w>0.999)
 {
 if(lastcurlong>(408.897653-149.432667)){
@@ -883,7 +879,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 			}
 		}
 		else
-			printf("超出范围");
+			printf("out of range");
 	}
 	ddux = ddpx;
 	dduy = ddpy;
@@ -910,7 +906,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	midy = uy;
 	midz = uz;
 
-	/*弦的中间点*/
+
 
 	midlx = (x + px1) / 2.0;
 	midly = (y + py1) / 2.0;
@@ -971,7 +967,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	flag = 0;
 	rl = sqrt((x - px1)*(x - px1) + (y - py1)*(y - py1) + (z - pz1)*(z - pz1));
 
-	//求实际的弓高误差
+	//actual chord error
 	midu = mm + (u - mm) / 2;
 	//printf("rl=%f",rl);
 	if (midu <= knotu[mici])
@@ -986,7 +982,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	midy = uy;
 	midz = uz;
 
-	/*弦的中间点*/
+	
 
 	midlx = (x + px1) / 2.0;
 	midly = (y + py1) / 2.0;
@@ -1002,12 +998,11 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	wy = uy;
 	wz = uz;
 	dwx = dpointx;
-	dwy = dpointy; /*w向一阶导*/
+	dwy = dpointy; 
 	dwz = dpointz;
 	ddwx = ddpx;
-	ddwy = ddpy;  /*w向二阶导*/
+	ddwy = ddpy;  
 	ddwz = ddpz;
-	/*下面求该点w向曲线的曲率半径*/
 	qulv = sqrt((dwy*ddwz - dwz*ddwy)*(dwy*ddwz - dwz*ddwy) + (dwz*ddwx - dwx*ddwz)*(dwz*ddwx - dwx*ddwz) + (dwx*ddwy - dwy*ddwx)*(dwx*ddwy - dwy*ddwx)) / sqrt((dwx*dwx + dwy*dwy + dwz*dwz)*(dwx*dwx + dwy*dwy + dwz*dwz)*(dwx*dwx + dwy*dwy + dwz*dwz));
 	//qulv=sqrt((duy*dduz-duz*dduy)*(duy*dduz-duz*dduy)+(duz*ddux-dux*dduz)*(duz*ddux-dux*dduz)+(dux*dduy-duy*ddux)*(dux*dduy-duy*ddux))/sqrt((dux*dux+duy*duy+duz*duz)*(dux*dux+duy*duy+duz*duz)*(dux*dux+duy*duy+duz*duz));
 	qulvr = 1.0 / qulv;
@@ -1017,7 +1012,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	qux = (dwy*qulvz - dwz*qulvy) / sqrt((dwy*qulvz - dwz*qulvy)*(dwy*qulvz - dwz*qulvy) + (dwz*qulvx - dwx*qulvz)*(dwz*qulvx - dwx*qulvz) + (dwx*qulvy - dwy*qulvx)*(dwx*qulvy - dwy*qulvx));
 	quy = (dwz*qulvx - dwx*qulvz) / sqrt((dwy*qulvz - dwz*qulvy)*(dwy*qulvz - dwz*qulvy) + (dwz*qulvx - dwx*qulvz)*(dwz*qulvx - dwx*qulvz) + (dwx*qulvy - dwy*qulvx)*(dwx*qulvy - dwy*qulvx));
 	quz = (dwx*qulvy - dwy*qulvx) / sqrt((dwy*qulvz - dwz*qulvy)*(dwy*qulvz - dwz*qulvy) + (dwz*qulvx - dwx*qulvz)*(dwz*qulvx - dwx*qulvz) + (dwx*qulvy - dwy*qulvx)*(dwx*qulvy - dwy*qulvx));
-	/*下面由残留误差seth求刀径间距setd*/
+	
 	cosa = ((qulvr + radius)*(qulvr + radius) + (qulvr + seth)*(qulvr + seth) - radius*radius) / (2 * (qulvr + radius)*(qulvr + seth));
 	//printf("cosa=%f\n  ",qulvr);
 	sina = sqrt(1 - cosa*cosa);
@@ -1039,7 +1034,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	anglec = atan(-vecx / vecy);
 	test = qux*vecx + quy*vecy + quz*vecz;
 	// printf("test=%f ",test);
-	/*下面求w的增量*/
+	
 	if (qulvr>500 * radius)
 	{
 		setd = 2 * sqrt(radius*radius - (radius - seth)*(radius - seth));
@@ -1073,7 +1068,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	//printf("detlw0=%.16lf \n  ", deltw0); 
 
 	//w = w + deltw0;
-	/*验证残留误差是否符合要求*/
+	
 	deboor(w + deltw0, wmici, wcoeff, wwei, knotw);//w+ 0.000445517
 	wwx = ux;
 	wwy = uy;
@@ -1100,7 +1095,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	
 	
 	//printf("qulvr=%f \n", qulvr);
-	/*xx,yy,zz是刀补后的坐标值，d是半径*/
+	
 	//printf("dux=%f ",dux/sqrt(dux*dux+duy*duy+duz*duz)); 
 	//printf("duy=%f ",duy/sqrt(dux*dux+duy*duy+duz*duz));
 	//printf("duz=%f ",duz/sqrt(dux*dux+duy*duy+duz*duz));
@@ -1151,7 +1146,7 @@ u0 = knotu[4] * setl / sqrt(deriux0*deriux0 + deriuy0*deriuy0 + deriuz0*deriuz0)
 	px1 = x;
 	py1 = y;
 	pz1 = z;
-	countnew++;  /*每插补一次，countnew加1*/
+	countnew++; 
 	lastcurlong += rl;
 	//printf("anglea=%f \n",anglea);
 	// printf("anglec=%f \n",anglec);
